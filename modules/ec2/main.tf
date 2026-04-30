@@ -8,22 +8,31 @@ resource "aws_instance" my_instance {
     Name = var.name
   }
 
-
   connection {
     type = "ssh"
-    user = "ubuntu"
+    user = "ec2-user"
     private_key = file(var.private_key_path)
     host = self.public_ip
   }
 
+  #local provisioner
+  provisioner "local-exec" {
+    command = "echo ${aws_instance.my_instance.public_ip} >> /tmp/ips.txt"
+  }
+
+  #Remote Provisioner
   provisioner "remote-exec" {
     inline = [
       "echo 'connected to the insatance'",
-      "sudo yum update -y",
-      "sudo yum install -y nginx",
-      "sudo systemctl start nginx",
-      "sudo systemctl enable nginx"
+      "sudo yum update -y"
     ]
+    on_failure = continue
+  }
+
+  #File provisioner
+  provisioner "file" {
+    source      = "/home/ubuntu/test.txt"
+    destination = "/home/ec2-user"
   }
 }
 
